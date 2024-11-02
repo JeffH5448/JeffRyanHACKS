@@ -13,8 +13,10 @@ def get_nutrition_info(barcode):
         if data['product']:
             # Extracting the nutritional information
             food_item = data['product']
+            #return food_item
             return {
                 'product_name': food_item.get('product_name', 'Unknown'),
+                'allergens': food_item.get('allergens_tags', 'allergins not available'),
                 'nutritional_info': food_item.get('nutriments', 'Nutritional information not available')
             }
     return None
@@ -51,6 +53,7 @@ def main():
                     sugar = str(int(nutrition_info['nutritional_info'].get('sugars_value', 'Not available'))) + nutrition_info['nutritional_info'].get('sugars_unit', 'Not available')
                     #print(f"Nutritional Info: {nutrition_info['nutritional_info']}")
                     print(f"\nProduct Name: {nutrition_info['product_name']}")
+                    print(f"\nallergens: {nutrition_info['allergens']}")
                     print("Nutritional Information:")
                     print(f"Calories: {calories}kcal")
                     print(f"Carbohydrates: {carbohydrates}")
