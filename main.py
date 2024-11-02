@@ -15,27 +15,26 @@ def read_barcode(crunchy_cheetos):
         return decoded_objects[0].data.decode('utf-8')
     else:
         return None
-
-def get_nutrition_info(barcode):
-    # Replace with your actual API endpoint and key
-    api_url = "https://api.nutritionix.com/v1_1/search/"
-    app_id = "YOUR_APP_ID"
-    app_key = "YOUR_APP_KEY"
     
-    # Search for the food product by barcode
-    response = requests.get(f"{api_url}{barcode}?results=0:1&fields=food_name,nutritional_info&appId={app_id}&appKey={app_key}")
+def get_nutrition_info(barcode):
+    api_url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+    
+    # Send the GET request
+    response = requests.get(api_url)
     
     if response.status_code == 200:
         data = response.json()
-        if data['hits']:
+        if data['product']:
             # Extracting the nutritional information
-            food_item = data['hits'][0]['fields']
-            return food_item
+            food_item = data['product']
+            return {
+                'product_name': food_item.get('product_name', 'Unknown'),
+                'nutritional_info': food_item.get('nutriments', 'Nutritional information not available')
+            }
     return None
-    
-def main():
 
-    image_path = "C:/Users/Ryan/Pictures/Screenshots/crunchy_cheetos_bc.png"
+def main():
+    #image_path = "C:/Users/Ryan/Pictures/Screenshots/crunchy_cheetos_bc.png"
 
     barcode = read_barcode(image_path)
     
@@ -45,13 +44,13 @@ def main():
         
         if nutrition_info:
             print("Nutritional Information:")
-            print(f"Product Name: {nutrition_info.get('food_name')}")
-            print(f"Nutritional Info: {nutrition_info.get('nutritional_info')}")
+            print(f"Product Name: {nutrition_info['product_name']}")
+            print(f"Nutritional Info: {nutrition_info['nutritional_info']}")
         else:
             print("Nutritional information not found.")
     else:
         print("No barcode found in the image.")
 
 if __name__ == "__main__":
-    image_path = "path/to/your/barcode/image.jpg"
     main()
+
