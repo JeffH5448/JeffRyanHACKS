@@ -5,7 +5,7 @@ import requests
 def read_barcode(crunchy_cheetos):
     # Load the image
     image = cv2.imread(crunchy_cheetos)
-    
+    print("hello")
     # Decode the barcode
     decoded_objects = decode(image)
     
