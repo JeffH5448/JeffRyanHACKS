@@ -147,20 +147,33 @@ def display_popup(image, message, duration=2):
     cv2.imshow('Barcode Scanner', image)
     cv2.waitKey(duration * 1000)
 
-
 def main():
     # User inputs for dietary preferences
+    gender = input("Please enter your gender (male/female): ").strip()
+    age = input("Please enter your age: ").strip()
+    height = input("Please enter your height (in Inches): ").strip()
+    weight = input("Please enter your weight (in Pounds): ").strip()
+    activity_level = input("Please enter your activity level 1-5 (least to greatest): ").strip()
+    
+    # Input allergies
     allergies = input("Please enter any allergies from this list (Peanuts, Tree Nuts, Milk, Eggs, Fish, Soy, Wheat, Gluten, none): ")
     if allergies not in ['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Fish', 'Soy', 'Wheat', 'Gluten', 'none']:
         raise ValueError("Invalid allergies. Please enter 'Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Fish', 'Soy', 'Wheat', 'Gluten', 'none'.")
 
-    gender = "male"
-    dailycal = calculate_daily_intake(gender, '20', '72', '200', '3')
+    dailycal = calculate_daily_intake(gender, age, height, weight, activity_level)
 
-    dietary_preference = input("Please specify your dietary preference (vegan/vegetarian/halal/none): ").strip().lower()
-    if dietary_preference not in ['vegan', 'vegetarian', 'halal', 'none']:
-        raise ValueError("Invalid dietary preference. Please enter 'vegan', 'vegetarian', 'halal, or 'none'.")
-
+    # Allow multiple dietary preferences
+    dietary_preferences_input = input("Please specify your dietary preference(s) (vegan/vegetarian/halal/none), separated by commas: ").strip().lower()
+    dietary_preferences = [pref.strip() for pref in dietary_preferences_input.split(',')]
+    
+    # Define valid dietary preferences
+    valid_preferences = ['vegan', 'vegetarian', 'halal', 'none']
+    
+    # Check for invalid preferences
+    invalid_preferences = [pref for pref in dietary_preferences if pref not in valid_preferences]
+    if invalid_preferences:
+        raise ValueError(f"Invalid dietary preference(s): {', '.join(invalid_preferences)}. Please enter valid preferences.")
+    
     # Nutrients to track
     nutrients_to_track = ['calories', 'carbohydrates', 'protein', 'total_fat', 'sodium', 'sugar', 'cholesterol', 'fiber']
     max_nutrient_values = {
@@ -196,22 +209,22 @@ def main():
                 if nutrition_info:
                     print(f"\nProduct Name: {nutrition_info['product_name']}")
 
-                    # Check dietary preference
-                    if dietary_preference == "vegan" and not nutrition_info.get('is_vegan', False):
+                    # Check dietary preferences
+                    if 'vegan' in dietary_preferences and not nutrition_info.get('is_vegan', False):
                         print("This product is not vegan, and the values will not be added to the cumulative totals.")
                         display_popup(frame, "Not Vegan!", 2)
                         continue
-                    if dietary_preference == "vegetarian" and not nutrition_info.get('is_vegetarian'):
+                    if 'vegetarian' in dietary_preferences and not nutrition_info.get('is_vegetarian'):
                         print("This product is not vegetarian, and the values will not be added to the cumulative totals.")
                         display_popup(frame, "Not Vegetarian!", 2)
                         continue  
-                    if dietary_preference == "halal" and not nutrition_info.get('is_halal'):
+                    if 'halal' in dietary_preferences and not nutrition_info.get('is_halal'):
                         print("This product is not halal, and the values will not be added to the cumulative totals.")
                         display_popup(frame, "Not Halal!", 2)
                         continue
                     
                     # Normalize user input allergies
-                    user_allergies = [allergy.strip().lower() for allergy in allergies.split(', ')]
+                    user_allergies = [allergy.strip().lower() for allergy in allergies.split(',')]
                     print("User Allergies: ", user_allergies)
 
                     # Get allergens from the nutrition info and normalize them
