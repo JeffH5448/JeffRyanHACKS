@@ -2,36 +2,53 @@ import cv2
 from pyzbar.pyzbar import decode
 import requests
 
-# Replace with your actual Nutritionix app ID and app key
 APP_ID = 'dbd1a571'
 APP_KEY = '38f057c999dd5e27cdb536142fcb989e'
 
 def get_nutrition_info(barcode):
-    api_url = f"https://trackapi.nutritionix.com/v2/search/item?upc={barcode}"
+    api_url_nut = f"https://trackapi.nutritionix.com/v2/search/item?upc={barcode}"
+    api_url_al = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
     
-    # Set up headers for Nutritionix API authentication
     headers = {
         "x-app-id": APP_ID,
         "x-app-key": APP_KEY,
     }
+
+    response_nut = requests.get(api_url_nut, headers=headers)
+    response_al = requests.get(api_url_al)
     
-    # Send the GET request
-    response = requests.get(api_url, headers=headers)
-    
-    if response.status_code == 200:
-        data = response.json()
+    if response_nut.status_code == 200 and response_al.status_code == 200:
+        nut_data = response_nut.json()
+        al_data = response_al.json()
+        
         # Check if items were found
-        if data['foods']:
-            food_item = data['foods'][0]
+        if nut_data['foods'] and 'product' in al_data:
+            food_item_nut = nut_data['foods'][0]  
+            food_item_al = al_data['product']  
+
+            #is_halal = 'halal' in food_item_al.get('labels_tags', [])
+            #is_vegan = 
+            #is_vegitarian = 
+            #is_gulion_free =
+            
             return {
-                'product_name': food_item.get('food_name', 'Unknown'),
-                'allergens': food_item.get('allergens', 'Allergens not available'),
+                'product_name': food_item_nut.get('food_name', 'Unknown'),
+                'allergens': food_item_al.get('allergens_tags', 'Allergens not available'),
+                'labels_tags': food_item_al.get('labels_tags', 'labels_tags not available'),
                 'nutritional_info': {
-                    'calories': food_item.get('nf_calories', 'Not available'),
-                    'carbohydrates': food_item.get('nf_total_carbohydrate', 'Not available'),
-                    'protein': food_item.get('nf_protein', 'Not available'),
-                    'sodium': food_item.get('nf_sodium', 'Not available'),
-                    'sugar': food_item.get('nf_sugars', 'Not available'),
+                    'calories': food_item_nut.get('nf_calories', 'Not available'),
+                    'carbohydrates': food_item_nut.get('nf_total_carbohydrate', 'Not available'),
+                    'protein': food_item_nut.get('nf_protein', 'Not available'),
+                    'sodium': food_item_nut.get('nf_sodium', 'Not available'),
+                    'sugar': food_item_nut.get('nf_sugars', 'Not available'),
+                    'total_fat': food_item_nut.get('nf_total_fat', 'Not available'),
+                    'saturated_fat': food_item_nut.get('nf_saturated_fat', 'Not available'),
+                    'cholesterol': food_item_nut.get('nf_cholesterol', 'Not available'),
+                    'fiber': food_item_nut.get('nf_dietary_fiber', 'Not available'),
+                    'vitamin_d': food_item_al.get('nutriments', {}).get('vitamin-d_100g', '0'),
+                    'iron': food_item_al.get('nutriments', {}).get('iron_100g', 'Not available'),
+                    'calcium': food_item_al.get('nutriments', {}).get('calcium_100g', 'Not available'),
+                    'potassium': food_item_al.get('nutriments', {}).get('potassium_100g', 'Not available')
                 }
             }
     return None
@@ -61,13 +78,22 @@ def main():
                 
                 if nutrition_info:
                     print(f"\nProduct Name: {nutrition_info['product_name']}")
-                    print(f"\nAllergens: {nutrition_info['allergens']}")
+                    print(f"Allergens: {nutrition_info['allergens']}")
+                    print(f"vegan, vegiterian status: {nutrition_info['labels_tags']}")
                     print("Nutritional Information:")
                     print(f"Calories: {nutrition_info['nutritional_info']['calories']} kcal")
                     print(f"Carbohydrates: {nutrition_info['nutritional_info']['carbohydrates']} g")
                     print(f"Protein: {nutrition_info['nutritional_info']['protein']} g")
                     print(f"Sodium: {nutrition_info['nutritional_info']['sodium']} mg")
                     print(f"Sugar: {nutrition_info['nutritional_info']['sugar']} g")
+                    print(f"Total Fat: {nutrition_info['nutritional_info']['total_fat']} g")
+                    print(f"Saturated Fat: {nutrition_info['nutritional_info']['saturated_fat']} g")
+                    print(f"Cholesterol: {nutrition_info['nutritional_info']['cholesterol']} mg")
+                    print(f"Fiber: {nutrition_info['nutritional_info']['fiber']} g")
+                    print(f"Vitamin D: {nutrition_info['nutritional_info']['vitamin_d']} µg")
+                    print(f"Iron: {nutrition_info['nutritional_info']['iron']} mg")
+                    print(f"Calcium: {nutrition_info['nutritional_info']['calcium']} mg")
+                    print(f"Potassium: {nutrition_info['nutritional_info']['potassium']} mg")
                 else:
                     print("Nutritional information not found.")
                 
