@@ -2,22 +2,37 @@ import cv2
 from pyzbar.pyzbar import decode
 import requests
 
+# Replace with your actual Nutritionix app ID and app key
+APP_ID = 'dbd1a571'
+APP_KEY = '38f057c999dd5e27cdb536142fcb989e'
+
 def get_nutrition_info(barcode):
-    api_url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+    api_url = f"https://trackapi.nutritionix.com/v2/search/item?upc={barcode}"
+    
+    # Set up headers for Nutritionix API authentication
+    headers = {
+        "x-app-id": APP_ID,
+        "x-app-key": APP_KEY,
+    }
     
     # Send the GET request
-    response = requests.get(api_url)
+    response = requests.get(api_url, headers=headers)
     
     if response.status_code == 200:
         data = response.json()
-        if data['product']:
-            # Extracting the nutritional information
-            food_item = data['product']
-            #return food_item
+        # Check if items were found
+        if data['foods']:
+            food_item = data['foods'][0]
             return {
-                'product_name': food_item.get('product_name', 'Unknown'),
-                'allergens': food_item.get('allergens_tags', 'allergins not available'),
-                'nutritional_info': food_item.get('nutriments', 'Nutritional information not available')
+                'product_name': food_item.get('food_name', 'Unknown'),
+                'allergens': food_item.get('allergens', 'Allergens not available'),
+                'nutritional_info': {
+                    'calories': food_item.get('nf_calories', 'Not available'),
+                    'carbohydrates': food_item.get('nf_total_carbohydrate', 'Not available'),
+                    'protein': food_item.get('nf_protein', 'Not available'),
+                    'sodium': food_item.get('nf_sodium', 'Not available'),
+                    'sugar': food_item.get('nf_sugars', 'Not available'),
+                }
             }
     return None
 
@@ -42,24 +57,17 @@ def main():
             barcode = decoded_objects[0].data.decode('utf-8')
 
             if barcode != last_barcode:  # Only process if it's a new barcode
-                #print(f"Decoded Barcode: {barcode}")
                 nutrition_info = get_nutrition_info(barcode)
                 
                 if nutrition_info:
-                    calories = int(nutrition_info['nutritional_info'].get('energy-kcal', 'Not available'))
-                    carbohydrates = str(int(nutrition_info['nutritional_info'].get('carbohydrates_value', 'Not available'))) + nutrition_info['nutritional_info'].get('carbohydrates_unit', 'Not available')
-                    protein = str(int(nutrition_info['nutritional_info'].get('proteins_value', 'Not available'))) + nutrition_info['nutritional_info'].get('proteins_unit', 'Not available')
-                    sodium = str(int(nutrition_info['nutritional_info'].get('sodium_value', 'Not available'))) + nutrition_info['nutritional_info'].get('sodium_unit', 'Not available')
-                    sugar = str(int(nutrition_info['nutritional_info'].get('sugars_value', 'Not available'))) + nutrition_info['nutritional_info'].get('sugars_unit', 'Not available')
-                    #print(f"Nutritional Info: {nutrition_info['nutritional_info']}")
                     print(f"\nProduct Name: {nutrition_info['product_name']}")
-                    print(f"\nallergens: {nutrition_info['allergens']}")
+                    print(f"\nAllergens: {nutrition_info['allergens']}")
                     print("Nutritional Information:")
-                    print(f"Calories: {calories}kcal")
-                    print(f"Carbohydrates: {carbohydrates}")
-                    print(f"protein: {protein}")
-                    print(f"sodium: {sodium}")
-                    print(f"sugar: {sugar}")
+                    print(f"Calories: {nutrition_info['nutritional_info']['calories']} kcal")
+                    print(f"Carbohydrates: {nutrition_info['nutritional_info']['carbohydrates']} g")
+                    print(f"Protein: {nutrition_info['nutritional_info']['protein']} g")
+                    print(f"Sodium: {nutrition_info['nutritional_info']['sodium']} mg")
+                    print(f"Sugar: {nutrition_info['nutritional_info']['sugar']} g")
                 else:
                     print("Nutritional information not found.")
                 
